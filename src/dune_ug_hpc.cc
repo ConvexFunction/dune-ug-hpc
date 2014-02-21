@@ -16,6 +16,12 @@
 using namespace Dune;
 
 
+// Helper function for converting numbers to strings
+template<typename T>
+std::string toString(const T& t) {
+  return static_cast<std::ostringstream*>( &(std::ostringstream() << t) )->str();
+}
+
 // Define some units, constants and types
 const int dim = 3;
 
@@ -47,36 +53,62 @@ int main(int argc, char** argv) try
   // Create ball
   FieldVector<double, dim> center;
   center[0] = center[2] = 6*mm;
-  center[1] = 15*mm;
+  center[1] = 5*mm;
 
   Ball<dim> ball(center, 2*mm);
 
 
   // Refine
+  const size_t steps = 4;
+  FieldVector<double, dim> stepDisplacement;
+  stepDisplacement[0] = stepDisplacement[2] = 0;
+  stepDisplacement[1] = 1*mm;
+
+
   const double epsilon = 0.1*mm;
-  const size_t levels = 1;
+  const int levels = 1;
 
-  for (size_t k = 0; k < levels; ++k) {
-    std::cout << "Refining level " << k << " ..." << std::endl;
+  for (size_t s = 0; s < steps; ++s) {
+    std::cout << "Step " << s << " ..." << std::endl;
 
-    // select elements that are close to the sphere for grid refinement
-    for (ElementIterator eIt = gv.begin<0>(); eIt != gv.end<0>(); ++eIt) {
-      if (ball.distanceTo(eIt->geometry().center()) < epsilon)
-	grid->mark(1, *eIt);
+    for (int k = 0; k < levels; ++k) {
+      std::cout << "   Refining level " << k << " ..." << std::endl;
+
+      // select elements that are close to the sphere for grid refinement
+      for (ElementIterator eIt = gv.begin<0>(); eIt != gv.end<0>(); ++eIt) {
+	if (ball.distanceTo(eIt->geometry().center()) < epsilon)
+	  grid->mark(1, *eIt);
+      }
+
+      // adapt grid
+      grid->adapt();
+
+      // clean up markers
+      grid->postAdapt();
     }
 
-    // adapt grid
-    grid->adapt();
+    // Output grid
+    const std::string baseOutName = "RefinedGrid_";
+    VTKWriter<GV> vtkWriter(gv);
 
-    // clean up markers
-    grid->postAdapt();
+    vtkWriter.write(baseOutName+toString(s));
+
+    // If this is not the last step, move sphere and coarsen grid
+    if (s+1 < steps) {
+      // Move sphere a little
+      ball.center += stepDisplacement;
+
+      // Coarsen everything
+      for (ElementIterator eIt = gv.begin<0>(); eIt != gv.end<0>(); ++eIt)
+	grid->mark(-levels, *eIt);
+
+      // adapt grid
+      grid->adapt();
+
+      // clean up markers
+      grid->postAdapt();
+    }
   }
-
-  // Output grid
-  const std::string outName = "RefinedGrid";
-
-  VTKWriter<GV> vtkWriter(gv);
-  vtkWriter.write(outName);
 
 
   return 0;

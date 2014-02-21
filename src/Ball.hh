@@ -5,8 +5,8 @@
 
 template<int dim>
 struct Ball {
-  const double radius;
-  const Dune::FieldVector<double, dim> center;
+  double radius;
+  Dune::FieldVector<double, dim> center;
 
   Ball(const Dune::FieldVector<double, dim>& c, const double& r) : center(c), radius(r) {}
 

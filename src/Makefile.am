@@ -32,8 +32,8 @@ dune_ug_hpc_LDFLAGS = $(AM_LDFLAGS) \
 	$(DUNE_LDFLAGS)
 
 # don't follow the full GNU-standard
-# we need automake 1.5
-AUTOMAKE_OPTIONS = foreign 1.5
+# we need automake 1.9
+AUTOMAKE_OPTIONS = foreign 1.9
 
 # pass most important options when "make distcheck" is used
 DISTCHECK_CONFIGURE_FLAGS = --with-dune-grid=$(DUNE_GRID_ROOT)  CXX="$(CXX)" CC="$(CC)"

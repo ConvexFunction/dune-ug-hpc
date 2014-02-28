@@ -7,4 +7,4 @@ Module: dune-ug-hpc
 Version: 0.1
 Maintainer: benjamin.bykowski@rwth-aachen.de
 #depending on 
-Depends: dune-grid
+Depends: dune-common dune-grid

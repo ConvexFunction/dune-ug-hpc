@@ -10,6 +10,8 @@
 
 //#include <dune/common/parallel/mpihelper.hh> // An initializer of MPI
 #include <dune/common/exceptions.hh>
+#include <dune/common/parametertree.hh>
+#include <dune/common/parametertreeparser.hh>
 
 #include "Ball.hh"
 
@@ -27,6 +29,8 @@ const int dim = 3;
 
 const double mm = 1e-3;
 
+typedef FieldVector<double, dim> GlobalVector;
+
 typedef UGGrid<dim> GridType;
 typedef GridType::LeafGridView GV;
 typedef GV::Codim<0>::Iterator ElementIterator;
@@ -34,39 +38,35 @@ typedef GV::Codim<0>::Iterator ElementIterator;
 
 int main(int argc, char** argv) try
 {
+  // Parse parameter file
+  const std::string parameterFileName = "param.ini";
+
+  Dune::ParameterTree parameterSet;
+  Dune::ParameterTreeParser::readINITree(parameterFileName, parameterSet);
+
   // Create ug grid from structured grid
-  std::array<unsigned int, dim> n;
-  n[0] = n[2] = 16;
-  n[1] = 50;
+  const std::array<unsigned, dim> n = parameterSet.get<std::array<unsigned, dim> >("n");
 
-  FieldVector<double, dim> lower;
-  lower[0] = lower [1] = lower[2] = 0.0;
-
-  FieldVector<double, dim> upper;
-  upper[0] = upper[2] = 12*mm;
-  upper[1] = 30*mm;
+  const GlobalVector
+    lower = parameterSet.get<GlobalVector>("lower"),
+    upper = parameterSet.get<GlobalVector>("upper");
 
   shared_ptr<GridType> grid = StructuredGridFactory<GridType>::createSimplexGrid(lower, upper, n);
   const GV gv = grid->leafView();
 
 
   // Create ball
-  FieldVector<double, dim> center;
-  center[0] = center[2] = 6*mm;
-  center[1] = 5*mm;
+  const GlobalVector center = parameterSet.get<GlobalVector>("center");
+  const double r = parameterSet.get<double>("r");
 
-  Ball<dim> ball(center, 2*mm);
-
+  Ball<dim> ball(center, r);
 
   // Refine
-  const size_t steps = 4;
-  FieldVector<double, dim> stepDisplacement;
-  stepDisplacement[0] = stepDisplacement[2] = 0;
-  stepDisplacement[1] = 1*mm;
+  const size_t steps = parameterSet.get<size_t>("steps");
+  const GlobalVector stepDisplacement = parameterSet.get<GlobalVector>("stepDisplacement");
 
-
-  const double epsilon = 0.1*mm;
-  const int levels = 1;
+  const double epsilon = parameterSet.get<double>("epsilon");
+  const int levels = parameterSet.get<int>("levels");
 
   for (size_t s = 0; s < steps; ++s) {
     std::cout << "Step " << s << " ..." << std::endl;

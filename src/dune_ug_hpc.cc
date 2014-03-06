@@ -81,8 +81,9 @@ int main(int argc, char** argv) try
     std::fill(tpwgts.begin(), tpwgts.end(), 1./nparts);
     std::fill(ubvec.begin(), ubvec.end(), 1.05);
 
-    std::vector<idx_t> elmdist(2);
-    elmdist[0] = 0; elmdist[1] = gv.size(dim);
+    std::vector<idx_t> elmdist(nparts+1);
+    elmdist[0] = 0;
+    std::fill(elmdist.begin()+1, elmdist.end(), gv.size(dim));
 
     std::vector<idx_t> eptr, eind;
     int numVertices = 0;

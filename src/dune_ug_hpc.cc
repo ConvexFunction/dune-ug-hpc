@@ -61,8 +61,6 @@ int main(int argc, char** argv) try
   const GV gv = grid->leafView();
 
   // Setup parameters for ParMETIS
-  MPI_Comm comm = Dune::MPIHelper::getCommunicator();
-
   const unsigned num_elems = gv.size(0);
 
   std::vector<unsigned> part(num_elems);
@@ -99,12 +97,16 @@ int main(int argc, char** argv) try
   }
 
   // Partition mesh usinig ParMETIS
-  const int OK = ParMETIS_V3_PartMeshKway(elmdist.data(), eptr.data(), eind.data(), NULL, &wgtflag, &numflag,
-					  &ncon, &ncommonnodes, &nparts, tpwgts.data(), ubvec.data(),
-					  options, &edgecut, reinterpret_cast<idx_t*>(part.data()), &comm);
+  if (0 == mpihelper.rank()) {
+    MPI_Comm comm = Dune::MPIHelper::getLocalCommunicator();
 
-  if (OK != METIS_OK)
-    DUNE_THROW(Dune::Exception, "ParMETIS is not happy.");
+    const int OK = ParMETIS_V3_PartMeshKway(elmdist.data(), eptr.data(), eind.data(), NULL, &wgtflag, &numflag,
+					    &ncon, &ncommonnodes, &nparts, tpwgts.data(), ubvec.data(),
+					    options, &edgecut, reinterpret_cast<idx_t*>(part.data()), &comm);
+
+    if (OK != METIS_OK)
+      DUNE_THROW(Dune::Exception, "ParMETIS is not happy.");
+  }
 
   // Transfer partitioning from ParMETIS to our grid
   grid->loadBalance(part, 0);

@@ -87,16 +87,16 @@ int main(int argc, char** argv) try
 
     std::vector<idx_t> eptr, eind;
     int numVertices = 0;
-    eind.push_back(numVertices);
+    eptr.push_back(numVertices);
 
     for (ElementIterator eIt = gv.begin<0, Interior_Partition>(); eIt != gv.end<0, Interior_Partition>(); ++eIt) {
       const int curNumVertices = ReferenceElements<double, dim>::general(eIt->type()).size(dim);
 
       numVertices += curNumVertices;
-      eind.push_back(numVertices);
+      eptr.push_back(numVertices);
 
       for (size_t k = 0; k < curNumVertices; ++k)
-	eptr.push_back(gv.indexSet().subIndex(*eIt, k, dim));
+	eind.push_back(gv.indexSet().subIndex(*eIt, k, dim));
     }
 
     // Partition mesh usinig ParMETIS

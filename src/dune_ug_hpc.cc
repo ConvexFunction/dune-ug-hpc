@@ -60,56 +60,54 @@ int main(int argc, char** argv) try
   // Get the parameters of the initial partitioning
   const GV gv = grid->leafView();
 
-  if (0 == mpihelper.rank()) {
-    // Setup parameters for ParMETIS
-    MPI_Comm comm = Dune::MPIHelper::getCommunicator();
+  // Setup parameters for ParMETIS
+  MPI_Comm comm = Dune::MPIHelper::getCommunicator();
 
-    const unsigned num_elems = gv.size(0);
+  const unsigned num_elems = gv.size(0);
 
-    std::vector<unsigned> part(num_elems);
+  std::vector<unsigned> part(num_elems);
 
-    idx_t wgtflag = 0;                       // we don't use weights
-    idx_t numflag = 0;                       // we are using C-style arrays
-    idx_t ncon = 1;                          // number of balance constraints
-    idx_t ncommonnodes = 2;                  // number of nodes elements must have in common in order to be adjacent to each other
-    idx_t options[4] = {0, 0, 0, 0};         // use default values for random seed, output and coupling
-    idx_t edgecut;                           // will store number of edges cut by partition
-    idx_t nparts = mpihelper.size();         // number of parts equals number of processes
-    std::vector<real_t> tpwgts(ncon*nparts); // load per subdomain and weight
-    std::vector<real_t> ubvec(ncon);         // weight tolerance
+  idx_t wgtflag = 0;                       // we don't use weights
+  idx_t numflag = 0;                       // we are using C-style arrays
+  idx_t ncon = 1;                          // number of balance constraints
+  idx_t ncommonnodes = 2;                  // number of nodes elements must have in common in order to be adjacent to each other
+  idx_t options[4] = {0, 0, 0, 0};         // use default values for random seed, output and coupling
+  idx_t edgecut;                           // will store number of edges cut by partition
+  idx_t nparts = mpihelper.size();         // number of parts equals number of processes
+  std::vector<real_t> tpwgts(ncon*nparts); // load per subdomain and weight
+  std::vector<real_t> ubvec(ncon);         // weight tolerance
 
-    std::fill(tpwgts.begin(), tpwgts.end(), 1./nparts);
-    std::fill(ubvec.begin(), ubvec.end(), 1.05);
+  std::fill(tpwgts.begin(), tpwgts.end(), 1./nparts);
+  std::fill(ubvec.begin(), ubvec.end(), 1.05);
 
-    std::vector<idx_t> elmdist(nparts+1);
-    elmdist[0] = 0;
-    std::fill(elmdist.begin()+1, elmdist.end(), gv.size(dim));
+  std::vector<idx_t> elmdist(nparts+1);
+  elmdist[0] = 0;
+  std::fill(elmdist.begin()+1, elmdist.end(), gv.size(dim));
 
-    std::vector<idx_t> eptr, eind;
-    int numVertices = 0;
+  std::vector<idx_t> eptr, eind;
+  int numVertices = 0;
+  eptr.push_back(numVertices);
+
+  for (ElementIterator eIt = gv.begin<0, Interior_Partition>(); eIt != gv.end<0, Interior_Partition>(); ++eIt) {
+    const int curNumVertices = ReferenceElements<double, dim>::general(eIt->type()).size(dim);
+
+    numVertices += curNumVertices;
     eptr.push_back(numVertices);
 
-    for (ElementIterator eIt = gv.begin<0, Interior_Partition>(); eIt != gv.end<0, Interior_Partition>(); ++eIt) {
-      const int curNumVertices = ReferenceElements<double, dim>::general(eIt->type()).size(dim);
-
-      numVertices += curNumVertices;
-      eptr.push_back(numVertices);
-
-      for (size_t k = 0; k < curNumVertices; ++k)
-	eind.push_back(gv.indexSet().subIndex(*eIt, k, dim));
-    }
-
-    // Partition mesh usinig ParMETIS
-    const int OK = ParMETIS_V3_PartMeshKway(elmdist.data(), eptr.data(), eind.data(), NULL, &wgtflag, &numflag,
-					    &ncon, &ncommonnodes, &nparts, tpwgts.data(), ubvec.data(),
-					    options, &edgecut, reinterpret_cast<idx_t*>(part.data()), &comm);
-
-    if (OK != METIS_OK)
-      DUNE_THROW(Dune::Exception, "ParMETIS is not happy.");
-
-    // Transfer partitioning from ParMETIS to our grid
-    grid->loadBalance(part, 0);
+    for (size_t k = 0; k < curNumVertices; ++k)
+      eind.push_back(gv.indexSet().subIndex(*eIt, k, dim));
   }
+
+  // Partition mesh usinig ParMETIS
+  const int OK = ParMETIS_V3_PartMeshKway(elmdist.data(), eptr.data(), eind.data(), NULL, &wgtflag, &numflag,
+					  &ncon, &ncommonnodes, &nparts, tpwgts.data(), ubvec.data(),
+					  options, &edgecut, reinterpret_cast<idx_t*>(part.data()), &comm);
+
+  if (OK != METIS_OK)
+    DUNE_THROW(Dune::Exception, "ParMETIS is not happy.");
+
+  // Transfer partitioning from ParMETIS to our grid
+  grid->loadBalance(part, 0);
 
   // Output grid
   VTKWriter<GV> vtkWriter(gv);

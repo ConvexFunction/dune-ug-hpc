@@ -17,6 +17,7 @@
 #include <parmetis.h>
 
 #include "Ball.hh"
+#include "GlobalUniqueIndex.hh"
 
 using namespace Dune;
 
@@ -110,6 +111,18 @@ int main(int argc, char** argv) try
 
   // Transfer partitioning from ParMETIS to our grid
   grid->loadBalance(part, 0);
+
+  // Create global index map
+  GlobalUniqueIndex<GV> globalIndex(gv);
+
+  // Output global indices
+  for (size_t k = 0; k < mpihelper.size(); ++k) {
+    if (mpihelper.rank() == k)
+      for (ElementIterator eIt = gv.begin<0, Interior_Partition>(); eIt != gv.end<0, Interior_Partition>(); ++eIt)
+	std::cout << mpihelper.rank() << ": " << globalIndex.globalIndex(*eIt) << std::endl;
+
+    mpihelper.getCollectiveCommunication().barrier();
+  }
 
   // Output grid
   VTKWriter<GV> vtkWriter(gv);

@@ -21,7 +21,10 @@
 
 using namespace Dune;
 
-
+#if PARMETIS_MAJOR_VERSION < 4
+typedef idxtype idx_t;
+typedef float real_t;
+#endif
 
 // Define some constants and types
 const int dim = 2;
@@ -101,12 +104,17 @@ int main(int argc, char** argv) try
   if (0 == mpihelper.rank()) {
     MPI_Comm comm = Dune::MPIHelper::getLocalCommunicator();
 
-    const int OK = ParMETIS_V3_PartMeshKway(elmdist.data(), eptr.data(), eind.data(), NULL, &wgtflag, &numflag,
+#if PARMETIS_MAJOR_VERSION >= 4
+    const int OK =
+#endif
+    ParMETIS_V3_PartMeshKway(elmdist.data(), eptr.data(), eind.data(), NULL, &wgtflag, &numflag,
 					    &ncon, &ncommonnodes, &nparts, tpwgts.data(), ubvec.data(),
 					    options, &edgecut, reinterpret_cast<idx_t*>(part.data()), &comm);
 
+#if PARMETIS_MAJOR_VERSION >= 4
     if (OK != METIS_OK)
       DUNE_THROW(Dune::Exception, "ParMETIS is not happy.");
+#endif
   }
 
   // Transfer partitioning from ParMETIS to our grid

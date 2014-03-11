@@ -81,7 +81,7 @@ int main(int argc, char** argv) try
 
   std::vector<idx_t> elmdist(nparts+1);
   elmdist[0] = 0;
-  std::fill(elmdist.begin()+1, elmdist.end(), gv.size(dim));
+  std::fill(elmdist.begin()+1, elmdist.end(), gv.size(0));
 
   std::vector<idx_t> eptr, eind;
   int numVertices = 0;

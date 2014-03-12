@@ -124,7 +124,7 @@ public:
     gridview_.comm().template broadcast<int>(offset.data(), size_, 0);
 
     indexOffset_.clear();
-    indexOffset_.resize(size_, 0);
+    indexOffset_.resize(size_ + 1, 0);
 
     for(unsigned int ii = 0; ii < indexOffset_.size(); ++ii)
       for(unsigned int jj = 0; jj < ii; ++jj)

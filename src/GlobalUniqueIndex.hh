@@ -195,11 +195,8 @@ public:
     return nLocalEntity_;
   }
 
-  /** \brief recalculate the index after mesh adaptation */
-  int update() {
-    DUNE_THROW(Dune::Exception, "update() not implemented yet");
-
-    return 1;
+  const std::vector<int>& indexOffset() {
+    return indexOffset_;
   }
 
 protected:

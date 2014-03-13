@@ -118,6 +118,9 @@ mpihelper.getCollectiveCommunication().barrier();
     const std::string baseOutName = "RefinedGrid_";
 
     VTKWriter<GV> vtkWriter(gv);
+    std::vector<int> rankField(gv.size(0));
+    std::fill(rankField.begin(), rankField.end(), grid->comm().rank());
+    vtkWriter.addCellData(rankField,"rank");
     vtkWriter.write(baseOutName+toString(s));
 
     // If this is not the last step, move sphere and coarsen grid

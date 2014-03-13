@@ -53,12 +53,16 @@ libtool
 ltmain.sh
 src/.deps/
 
+dune-ug-hpc.pc
+
 ### cmake
 CMakeCache.txt
 CMakeFiles
 Makefile
 cmake_install.cmake
 install_manifest.txt
+
+build-cmake
 
 ### simulation results
 *.vtu

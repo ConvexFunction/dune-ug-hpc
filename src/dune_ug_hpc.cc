@@ -60,7 +60,7 @@ int main(int argc, char** argv) try
 
   shared_ptr<GridType> grid = StructuredGridFactory<GridType>::createSimplexGrid(lower, upper, n);
 
-  const GV gv = grid->leafView();
+  const GV gv = grid->leafGridView();
 
   // Create ball
   const GlobalVector center = parameterSet.get<GlobalVector>("center");

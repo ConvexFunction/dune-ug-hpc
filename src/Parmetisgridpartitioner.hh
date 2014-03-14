@@ -86,12 +86,13 @@ struct ParMetisGridPartitioner {
   }
 
   static std::vector<unsigned> repartition(const GridView& gv, const Dune::MPIHelper& mpihelper) {
-    const unsigned num_elems = gv.size(0);
-
-    std::vector<unsigned> part(num_elems);
 
     // Create global index map
     GlobalUniqueIndex<GridView> globalIndex(gv);
+
+    const unsigned num_elems = globalIndex.nOwnedLocalEntity();
+
+    std::vector<unsigned> interiorPart(num_elems);
 
     // Setup parameters for ParMETIS
     idx_t wgtflag = 0;                                  // we don't use weights
@@ -131,13 +132,31 @@ struct ParMetisGridPartitioner {
 #endif
       ParMETIS_V3_PartKway(vtxdist.data(), xadj.data(), adjncy.data(), NULL, NULL, &wgtflag,
 			   &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), options,
-			   &edgecut, reinterpret_cast<idx_t*>(part.data()), &comm);
+			   &edgecut, reinterpret_cast<idx_t*>(interiorPart.data()), &comm);
 
 #if PARMETIS_MAJOR_VERSION >= 4
     if (OK != METIS_OK)
       DUNE_THROW(Dune::Exception, "ParMETIS is not happy.");
 #endif
 
+    // At this point, interiorPart contains a target rank for each interior element, and they are sorted
+    // by the order in which the grid view traverses them.  Now we need to do two things:
+    // a) Add additional dummy entries for the ghost elements
+    // b) Use the element index for the actual ordering.  Since there may be different types of elements,
+    //    we cannot use the index set directly, but have to go through a Mapper.
+
+    typedef Dune::MultipleCodimMultipleGeomTypeMapper<GridView, Dune::MCMGElementLayout> ElementMapper;
+    ElementMapper elementMapper(gv);
+
+    std::vector<unsigned int> part(gv.size(0));
+    std::fill(part.begin(), part.end(), 0);
+    unsigned int c = 0;
+    for (InteriorElementIterator eIt = gv.template begin<0, Dune::Interior_Partition>();
+         eIt != gv.template end<0, Dune::Interior_Partition>();
+         ++eIt)
+    {
+      part[elementMapper.map(*eIt)] = interiorPart[c++];
+    }
     return part;
   }
 };

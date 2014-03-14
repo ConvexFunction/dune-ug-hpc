@@ -133,14 +133,16 @@ mpihelper.getCollectiveCommunication().barrier();
       ball.center += stepDisplacement;
 
       // Coarsen everything
-      for (ElementIterator eIt = gv.begin<0, Interior_Partition>(); eIt != gv.end<0, Interior_Partition>(); ++eIt)
-	grid->mark(-levels, *eIt);
+      for (int k = 0; k < levels; ++k) {
+	for (ElementIterator eIt = gv.begin<0, Interior_Partition>(); eIt != gv.end<0, Interior_Partition>(); ++eIt)
+	  grid->mark(-1, *eIt);
 
-      // adapt grid
-      grid->adapt();
+	// adapt grid
+	grid->adapt();
 
-      // clean up markers
-      grid->postAdapt();
+	// clean up markers
+	grid->postAdapt();
+      }
     }
   }
 

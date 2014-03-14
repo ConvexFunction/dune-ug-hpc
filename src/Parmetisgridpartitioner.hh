@@ -85,7 +85,7 @@ struct ParMetisGridPartitioner {
     return part;
   }
 
-  static std::vector<unsigned> repartition(const GridView& gv, const Dune::MPIHelper& mpihelper) {
+  static std::vector<unsigned> repartition(const GridView& gv, const Dune::MPIHelper& mpihelper, real_t& itr = 1000) {
 
     // Create global index map
     GlobalUniqueIndex<GridView> globalIndex(gv);
@@ -130,9 +130,9 @@ struct ParMetisGridPartitioner {
 #if PARMETIS_MAJOR_VERSION >= 4
     const int OK =
 #endif
-      ParMETIS_V3_PartKway(vtxdist.data(), xadj.data(), adjncy.data(), NULL, NULL, &wgtflag,
-			   &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), options,
-			   &edgecut, reinterpret_cast<idx_t*>(interiorPart.data()), &comm);
+      ParMETIS_V3_AdaptiveRepart(vtxdist.data(), xadj.data(), adjncy.data(), NULL, NULL, NULL,
+				 &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(),
+				 &itr, options, &edgecut, reinterpret_cast<idx_t*>(interiorPart.data()), &comm);
 
 #if PARMETIS_MAJOR_VERSION >= 4
     if (OK != METIS_OK)

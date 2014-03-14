@@ -109,7 +109,11 @@ int main(int argc, char** argv) try
 mpihelper.getCollectiveCommunication().barrier();
 
     // Repartition
-    part = ParMetisGridPartitioner<GV>::repartition(gv, mpihelper);
+    real_t itr = 1000; // ratio of inter-processor communication time compared to data redistribution time
+                       // high ~> minimize edge-cut and have smaller communication time during calculations
+                       // low  ~> do not move elements around between processes too much and thous reduce communication time during redistribution
+
+    part = ParMetisGridPartitioner<GV>::repartition(gv, mpihelper, itr);
 
     // Transfer partitioning from ParMETIS to our grid
     grid->loadBalance(part, 0);

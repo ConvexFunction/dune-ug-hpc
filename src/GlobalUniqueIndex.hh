@@ -112,16 +112,11 @@ public:
 
    /** communicate the number of locally owned entities to all other processes so that the respective offset
      *  can be calculated on the respective processor; we use the Dune mpi collective communication facility
-     *  for this; first, we gather the number of locally owned entities on the root process and, second, we
-     *  broadcast the array to all processes where the respective offset can be calculated. */
-
+     *  for this */
     std::vector<int> offset(size_, 0);
 
-    /** Gather number of locally owned entities on root process */
-    gridview_.comm().template gather<int>(&nLocalEntity_, offset.data(), 1, 0);
-
-    /** Broadcast the array containing the number of locally owned entities to all processes */
-    gridview_.comm().template broadcast<int>(offset.data(), size_, 0);
+    /** Share number of locally owned entities */
+    gridview_.comm().template allgather<int>(&nLocalEntity_, 1, offset.data());
 
     indexOffset_.clear();
     indexOffset_.resize(size_ + 1, 0);
